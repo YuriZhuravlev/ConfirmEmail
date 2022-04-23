@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import confirm.email.data.Resource
+import confirm.email.ui.screens.about.AboutScreen
 import confirm.email.ui.view.BigText
 import confirm.email.ui.view.SmallText
 import confirm.email.utils.formatString
@@ -27,13 +28,14 @@ fun LettersScreen(viewModel: LettersViewModel) {
         val letters = viewModel.letters.collectAsState()
         val openLetter = viewModel.openLetter.collectAsState()
         var firstLoad by remember { mutableStateOf(false) }
+        var showAbout by remember { mutableStateOf(false) }
         if (!firstLoad) {
             viewModel.loadLetters()
             firstLoad = true
         }
         Column(
             Modifier.width(260.dp)
-                .background(Color.LightGray)
+                .background(Color(0xfff5f5f5))
                 .fillMaxHeight()
         ) {
             user.value.data?.name?.let { username ->
@@ -48,24 +50,33 @@ fun LettersScreen(viewModel: LettersViewModel) {
                     Icon(
                         painter = painterResource("img/info.svg"),
                         modifier = Modifier
-                            .clickable { }
+                            .clickable { showAbout = true }
                             .padding(8.dp),
                         contentDescription = "About"
                     )
                 }
-                Divider()
                 val box = letters.value
                 when (box) {
                     is Resource.SuccessResource -> {
                         if (box.data == null || box.data.isEmpty()) {
+                            Divider()
                             BigText("Писем нет")
                         } else {
                             if (box.data.outbox.isNotEmpty()) {
                                 LazyColumn(modifier = Modifier.weight(1f)) {
-                                    item { BigText("Исходящие") }
+                                    item {
+                                        Divider()
+                                        BigText("Исходящие")
+                                    }
                                     items(box.data.outbox) { letter ->
                                         Divider()
-                                        Row(modifier = Modifier.padding(4.dp).fillMaxWidth()) {
+                                        Row(modifier = Modifier.padding(4.dp)
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                viewModel.openLetter(letter)
+                                                showAbout = false
+                                            }
+                                        ) {
                                             Column(Modifier.weight(1f)) {
                                                 SmallText(
                                                     "${letter.toName} <${letter.toEmail}>",
@@ -79,16 +90,25 @@ fun LettersScreen(viewModel: LettersViewModel) {
                                                 maxLines = 1
                                             )
                                         }
-                                        Divider()
                                     }
+                                    item { Divider() }
                                 }
                             }
                             if (box.data.inbox.isNotEmpty()) {
                                 LazyColumn(modifier = Modifier.weight(1f)) {
-                                    item { BigText("Входящие") }
+                                    item {
+                                        Divider()
+                                        BigText("Входящие")
+                                    }
                                     items(box.data.inbox) { letter ->
                                         Divider()
-                                        Row(modifier = Modifier.padding(4.dp).fillMaxWidth()) {
+                                        Row(modifier = Modifier.padding(4.dp)
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                viewModel.openLetter(letter)
+                                                showAbout = false
+                                            }
+                                        ) {
                                             Column(Modifier.weight(1f)) {
                                                 SmallText(
                                                     "${letter.fromName} <${letter.fromEmail}>",
@@ -102,8 +122,8 @@ fun LettersScreen(viewModel: LettersViewModel) {
                                                 maxLines = 1
                                             )
                                         }
-                                        Divider()
                                     }
+                                    item { Divider() }
                                 }
                             }
                         }
@@ -122,10 +142,20 @@ fun LettersScreen(viewModel: LettersViewModel) {
                 }
             }
         }
-        if (openLetter.value != null) {
-            Text("Open Letter")
+        Box(
+            modifier = Modifier.width(1.dp).fillMaxHeight()
+                .background(Color.LightGray)
+        )
+        if (showAbout) {
+            AboutScreen()
         } else {
-            EmptyView()
+            openLetter.value.let { letter ->
+                if (letter != null) {
+                    LetterView(letter)
+                } else {
+                    EmptyView()
+                }
+            }
         }
     }
 }
@@ -133,7 +163,7 @@ fun LettersScreen(viewModel: LettersViewModel) {
 
 @Composable
 fun EmptyView() {
-    Box(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize().background(Color.White)) {
         Text("Сообщений не выбрано", modifier = Modifier.align(Alignment.Center))
     }
 }

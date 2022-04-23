@@ -1,5 +1,6 @@
 package confirm.email.ui.screens.login
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -17,7 +18,7 @@ import confirm.email.ui.view.BigText
 
 @Composable
 fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> Unit) {
-    Column(Modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize().background(Color.White)) {
         val user by viewModel.user.collectAsState()
         var name by remember { mutableStateOf("") }
         var host by remember { mutableStateOf("") }

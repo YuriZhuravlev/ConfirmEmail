@@ -28,4 +28,8 @@ class LettersViewModel(
             )
         }
     }
+
+    fun openLetter(letter: UILetter) {
+        viewModelScope.launch { _openLetter.emit(letter) }
+    }
 }
