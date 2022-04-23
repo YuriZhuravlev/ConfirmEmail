@@ -20,4 +20,10 @@ private val formatter by lazy {
     SimpleDateFormat("HH:mm d.MM", Locale.getDefault())
 }
 
+private val fileFormatter by lazy {
+    SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault())
+}
+
 fun Date.formatString() = formatter.format(this)
+
+fun Date.formatFile() = fileFormatter.format(this)

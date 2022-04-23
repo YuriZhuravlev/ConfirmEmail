@@ -17,7 +17,6 @@ val statesWithoutAuth = arrayOf(Navigation.Login, Navigation.About)
 @Composable
 fun NavView() {
     var state by remember { mutableStateOf(Navigation.Login) }
-    //var documentPath by remember { mutableStateOf<String?>(null) }
     val user by getKoin().get<UserRepository>().user.collectAsState()
     if (user.data == null && state !in statesWithoutAuth)
         state = Navigation.Login
