@@ -1,5 +1,7 @@
 package confirm.email.utils
 
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.regex.Pattern.compile
 
 private val emailRegex = compile(
@@ -13,3 +15,9 @@ private val emailRegex = compile(
 )
 
 fun String.isValidEmail() = emailRegex.matcher(this).matches()
+
+private val formatter by lazy {
+    SimpleDateFormat("HH:mm d.MM", Locale.getDefault())
+}
+
+fun Date.formatString() = formatter.format(this)

@@ -25,7 +25,7 @@ fun NavView() {
                 AboutScreen()
             }
             Navigation.Login -> {
-                LoginView(getKoin().get()) {
+                LoginView(getKoin().get(), toAbout = { state = Navigation.About }) {
                     state = Navigation.Letters
                 }
             }

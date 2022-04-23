@@ -16,26 +16,39 @@ import confirm.email.data.Resource
 import confirm.email.ui.view.BigText
 
 @Composable
-fun LoginView(viewModel: LoginViewModel, onSuccess: () -> Unit) {
+fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         val user by viewModel.user.collectAsState()
         var name by remember { mutableStateOf("") }
+        var host by remember { mutableStateOf("") }
         if (user.data != null) {
             onSuccess()
         }
         BigText(
-            "Введите адрес электронной почты",
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
+            "Введите данные для входа",
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp, top = 24.dp)
+        )
+        TextField(
+            value = host, onValueChange = { host = it },
+            enabled = user.status != Resource.Status.Loading,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            singleLine = true, isError = user.status == Resource.Status.Failed,
+            label = { Text("Адрес сервера") }
         )
         TextField(
             value = name, onValueChange = { name = it },
             enabled = user.status != Resource.Status.Loading,
             modifier = Modifier.align(Alignment.CenterHorizontally),
-            singleLine = true, isError = user.status == Resource.Status.Failed
+            singleLine = true, isError = user.status == Resource.Status.Failed,
+            label = { Text("Адрес электронной почты") }
         )
-        Button(modifier = Modifier.align(Alignment.CenterHorizontally), onClick = {
-            viewModel.login(name)
-        }, enabled = name.isNotBlank() && user.status != Resource.Status.Loading) {
+        Button(
+            modifier = Modifier.align(Alignment.CenterHorizontally), onClick = {
+                viewModel.login(name, host)
+            }, enabled = name.isNotBlank()
+                    && host.isNotBlank()
+                    && user.status != Resource.Status.Loading
+        ) {
             Text("Войти")
         }
         if (user.status == Resource.Status.Loading)
