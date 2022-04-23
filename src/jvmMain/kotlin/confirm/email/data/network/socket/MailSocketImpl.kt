@@ -1,11 +1,12 @@
 package confirm.email.data.network.socket
 
+import confirm.email.data.network.SocketConsumer
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
 
-class MailSocketImpl : MailSocket {
+class MailSocketImpl(private val socketConsumer: SocketConsumer) : MailSocket {
     private val client = HttpClient(CIO) {
         install(WebSockets)
     }
@@ -26,7 +27,9 @@ class MailSocketImpl : MailSocket {
                 for (frame in incoming) {
                     when (frame) {
                         is Frame.Text -> {
-                            println(frame.readText())
+                            val text = frame.readText()
+                            println(text)
+                            socketConsumer.proceed(text)
                         }
                         is Frame.Close -> {
                             println("Close")
