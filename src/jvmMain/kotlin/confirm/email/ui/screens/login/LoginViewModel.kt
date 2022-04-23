@@ -4,8 +4,7 @@ import confirm.email.base.ViewModel
 import confirm.email.data.repository.UserRepository
 import kotlinx.coroutines.launch
 
-class LoginViewModel : ViewModel() {
-    private val userRepository = UserRepository
+class LoginViewModel(private val userRepository: UserRepository) : ViewModel() {
     val user get() = userRepository.user
 
     fun login(name: String) {

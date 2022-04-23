@@ -7,6 +7,7 @@ plugins {
 }
 
 val ktor_version: String by project
+val koin_version: String by project
 group = "yuri.zhuravlev"
 version = "1.0-SNAPSHOT"
 
@@ -31,6 +32,7 @@ kotlin {
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-websockets:$ktor_version")
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
+                implementation("io.insert-koin:koin-core:$koin_version")
             }
         }
         val jvmTest by getting

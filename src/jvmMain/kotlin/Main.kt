@@ -5,7 +5,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import confirm.email.di.AppModule
 import confirm.email.ui.screens.NavView
+import org.koin.core.context.startKoin
 
 @Composable
 @Preview
@@ -16,6 +18,9 @@ fun App() {
 }
 
 fun main() = application {
+    startKoin {
+        modules(AppModule)
+    }
     Window(
         onCloseRequest = ::exitApplication,
         title = "Электронное письмо с подтверждением",

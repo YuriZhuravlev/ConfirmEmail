@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
-object UserRepository {
+class UserRepository {
     private val _user = MutableStateFlow<Resource<UIUser?>>(Resource.SuccessResource(null))
     val user = _user.asStateFlow()
 
