@@ -1,6 +1,8 @@
 package confirm.email.ui.screens.login
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,7 +20,7 @@ import confirm.email.ui.view.BigText
 
 @Composable
 fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> Unit) {
-    Column(Modifier.fillMaxSize().background(Color.White)) {
+    Column(Modifier.fillMaxSize().background(Color.White).padding(vertical = 24.dp)) {
         val user by viewModel.user.collectAsState()
         var name by remember { mutableStateOf("") }
         var host by remember { mutableStateOf("") }
@@ -27,7 +29,7 @@ fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> U
         }
         BigText(
             "Введите данные для входа",
-            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp, top = 24.dp)
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
         )
         TextField(
             value = host, onValueChange = { host = it },
@@ -56,5 +58,10 @@ fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> U
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         if (user.status == Resource.Status.Failed)
             Text(user.error?.message ?: "Произошла ошибка", color = Color.Red)
+        Box(Modifier.weight(1f))
+        Text("О программе", modifier =
+        Modifier.align(Alignment.End)
+            .padding(end = 18.dp)
+            .clickable { toAbout() })
     }
 }

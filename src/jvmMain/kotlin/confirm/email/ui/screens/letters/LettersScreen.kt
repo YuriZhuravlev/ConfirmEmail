@@ -54,6 +54,13 @@ fun LettersScreen(viewModel: LettersViewModel) {
                             .padding(8.dp),
                         contentDescription = "About"
                     )
+                    Icon(
+                        painter = painterResource("img/logout.svg"),
+                        modifier = Modifier
+                            .clickable { viewModel.logout() }
+                            .padding(8.dp),
+                        contentDescription = "Logout"
+                    )
                 }
                 val box = letters.value
                 when (box) {

@@ -12,20 +12,26 @@ import confirm.email.ui.screens.login.LoginView
 import org.koin.java.KoinJavaComponent.getKoin
 import sharing.file.ui.navigation.Navigation
 
+val statesWithoutAuth = arrayOf(Navigation.Login, Navigation.About)
+
 @Composable
 fun NavView() {
     var state by remember { mutableStateOf(Navigation.Login) }
     //var documentPath by remember { mutableStateOf<String?>(null) }
     val user by getKoin().get<UserRepository>().user.collectAsState()
-    if (user.data == null && state != Navigation.Login)
+    if (user.data == null && state !in statesWithoutAuth)
         state = Navigation.Login
     Box(modifier = Modifier.fillMaxSize()) {
         when (state) {
             Navigation.About -> {
-                AboutScreen()
+                AboutScreen {
+                    state = Navigation.Login
+                }
             }
             Navigation.Login -> {
-                LoginView(getKoin().get(), toAbout = { state = Navigation.About }) {
+                LoginView(getKoin().get(), toAbout = {
+                    state = Navigation.About
+                }) {
                     state = Navigation.Letters
                 }
             }

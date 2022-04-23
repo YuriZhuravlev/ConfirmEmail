@@ -31,4 +31,8 @@ class UserRepository {
         }
         _user.emit(result)
     }
+
+    suspend fun logout() {
+        _user.emit(Resource.SuccessResource(null))
+    }
 }
