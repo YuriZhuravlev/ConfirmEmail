@@ -4,7 +4,6 @@ import confirm.email.data.Resource
 import confirm.email.data.model.UIUser
 import confirm.email.utils.isValidEmail
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
@@ -17,7 +16,6 @@ class UserRepository {
         _user.emit(Resource.LoadingResource())
         val result = withContext(Dispatchers.IO) {
             try {
-                delay(400)
                 if (name.isValidEmail()) {
                     // TODO
                     Resource.SuccessResource<UIUser?>(UIUser(name, host))

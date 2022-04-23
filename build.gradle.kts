@@ -32,6 +32,8 @@ kotlin {
                 implementation("io.ktor:ktor-client-cio:$ktor_version")
                 implementation("io.ktor:ktor-client-websockets:$ktor_version")
                 implementation("io.ktor:ktor-client-logging:$ktor_version")
+                implementation("io.ktor:ktor-serialization-gson-jvm:$ktor_version")
+
                 implementation("io.insert-koin:koin-core:$koin_version")
             }
         }

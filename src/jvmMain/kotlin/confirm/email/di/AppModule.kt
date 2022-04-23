@@ -1,5 +1,7 @@
 package confirm.email.di
 
+import confirm.email.data.network.socket.MailSocket
+import confirm.email.data.network.socket.MailSocketImpl
 import confirm.email.data.repository.LetterRepository
 import confirm.email.data.repository.UserRepository
 import confirm.email.ui.screens.letter_create.LetterCreateViewModel
@@ -13,4 +15,5 @@ val AppModule = module {
     factory { LetterCreateViewModel(get(), get()) }
     factory { LettersViewModel(get(), get()) }
     factory { LoginViewModel(get()) }
+    factory<MailSocket> { MailSocketImpl() }
 }
