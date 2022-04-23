@@ -36,10 +36,14 @@ fun NavView() {
                 }
             }
             Navigation.Letters -> {
-                LettersScreen(getKoin().get())
+                LettersScreen(getKoin().get()) {
+                    state = Navigation.CreateLetter
+                }
             }
             Navigation.CreateLetter -> {
-                LetterCreateScreen(getKoin().get())
+                LetterCreateScreen(getKoin().get()) {
+                    state = Navigation.Letters
+                }
             }
         }
     }

@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import confirm.email.data.Resource
 import confirm.email.ui.screens.about.AboutScreen
 import confirm.email.ui.view.BigText
@@ -22,11 +23,11 @@ import confirm.email.ui.view.SmallText
 import confirm.email.utils.formatString
 
 @Composable
-fun LettersScreen(viewModel: LettersViewModel) {
+fun LettersScreen(viewModel: LettersViewModel, toCreate: () -> Unit) {
     Row(Modifier.fillMaxSize()) {
-        val user = viewModel.user.collectAsState()
-        val letters = viewModel.letters.collectAsState()
-        val openLetter = viewModel.openLetter.collectAsState()
+        val user by viewModel.user.collectAsState()
+        val letters by viewModel.letters.collectAsState()
+        val openLetter by viewModel.openLetter.collectAsState()
         var firstLoad by remember { mutableStateOf(false) }
         var showAbout by remember { mutableStateOf(false) }
         if (!firstLoad) {
@@ -38,32 +39,38 @@ fun LettersScreen(viewModel: LettersViewModel) {
                 .background(Color(0xfff5f5f5))
                 .fillMaxHeight()
         ) {
-            user.value.data?.name?.let { username ->
+            user.data?.name?.let { username ->
                 Row {
-                    Text(
-                        username,
+                    Icon(
+                        painter = painterResource("img/add.svg"),
                         modifier = Modifier
-                            .align(Alignment.CenterVertically)
-                            .weight(1f)
-                            .padding(start = 8.dp)
+                            .clickable { toCreate() }
+                            .padding(2.dp),
+                        contentDescription = "Add"
                     )
                     Icon(
                         painter = painterResource("img/info.svg"),
                         modifier = Modifier
                             .clickable { showAbout = true }
-                            .padding(8.dp),
+                            .padding(2.dp),
                         contentDescription = "About"
                     )
                     Icon(
                         painter = painterResource("img/logout.svg"),
                         modifier = Modifier
                             .clickable { viewModel.logout() }
-                            .padding(8.dp),
+                            .padding(2.dp),
                         contentDescription = "Logout"
                     )
+                    Box(Modifier.weight(1f))
+                    Text(
+                        username,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                            .align(Alignment.CenterVertically),
+                        fontSize = 14.sp
+                    )
                 }
-                val box = letters.value
-                when (box) {
+                when (val box = letters) {
                     is Resource.SuccessResource -> {
                         if (box.data == null || box.data.isEmpty()) {
                             Divider()
@@ -156,7 +163,7 @@ fun LettersScreen(viewModel: LettersViewModel) {
         if (showAbout) {
             AboutScreen()
         } else {
-            openLetter.value.let { letter ->
+            openLetter.let { letter ->
                 if (letter != null) {
                     LetterView(letter)
                 } else {
