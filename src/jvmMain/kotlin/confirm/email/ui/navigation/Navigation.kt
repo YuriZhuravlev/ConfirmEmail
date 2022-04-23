@@ -12,14 +12,9 @@ enum class Navigation {
     Login,
 
     /**
-     * Основное меню
+     * Просмотр писем
      */
-    Empty,
-
-    /**
-     * Изменение документа
-     */
-    ReadLetter,
+    Letters,
 
     /**
      * Создание письма
