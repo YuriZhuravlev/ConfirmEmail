@@ -3,6 +3,7 @@ package confirm.email.utils
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern.compile
+import kotlin.experimental.xor
 
 private val emailRegex = compile(
     "[a-zA-Z0-9+._%\\-]{1,256}" +
@@ -27,3 +28,9 @@ private val fileFormatter by lazy {
 fun Date.formatString() = formatter.format(this)
 
 fun Date.formatFile() = fileFormatter.format(this)
+
+fun ByteArray.xor(key: ByteArray): ByteArray {
+    return ByteArray(size) { i ->
+        get(i).xor(key[i])
+    }
+}

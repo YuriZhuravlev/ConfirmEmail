@@ -1,11 +1,292 @@
 package confirm.email.protocol
 
+import confirm.email.utils.xor
+import io.ktor.util.*
+import java.io.File
+import java.io.FileOutputStream
+import java.io.PrintStream
+import java.util.*
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.spec.SecretKeySpec
+import kotlin.random.Random
+
 sealed class ConfirmEmailProtocol {
-    class Inbox : ConfirmEmailProtocol() {
+    class Outbox(
+        val message: String,
+        val emptyMessage: String,
+        private val countKeys: Int = 8,
+        private val log: PrintStream? = null
+    ) : ConfirmEmailProtocol() {
+        val uuid = UUID.randomUUID().toString()
+        private val prefix = "Outbox-$uuid:"
+
+        init {
+            log?.println("$prefix message=$message")
+        }
+
+        private val key = generateKey().encoded
+        private val keys: List<Pair<ByteArray, ByteArray>> by lazy {
+            List(countKeys) {
+                val first = generateKey().encoded
+                Pair(first, first.xor(key))
+            }
+        }
+        private val sendingKeys = MutableList(countKeys) { 0 }
+        private val encryptedMessage by lazy {
+            encodeData(message.toByteArray(), key).encodeBase64()
+        }
+
+        private var encryptedPairs: List<Pair<ByteArray, ByteArray>>? = null
+        private var inKeys: List<Pair<ByteArray?, ByteArray?>>? = null
+
+        /**
+         * 1) C = Ek(M)
+         */
+        fun encryptedMessage(): String {
+            log?.println("$prefix key=${key.encodeBase64()}, encryptedMessage=$encryptedMessage")
+            return encryptedMessage
+        }
+
+        /**
+         * 3) Генерирование 2n ключей
+         */
+        fun genKeys() {
+            log?.println(
+                "$prefix emptyMessage=$emptyMessage, generate keys($countKeys)=${
+                    keys.joinToString(prefix = "[", postfix = "]") {
+                        "(${it.first.encodeBase64()},${it.second.encodeBase64()})"
+                    }
+                }")
+        }
+
+        /**
+         * 4) Шифрование пустого сообщения 2n ключами
+         */
+        fun encryptedEmptyMessage(): List<Pair<String, String>> {
+            val list = List(countKeys) {
+                val data = emptyMessage.toByteArray()
+                val pair = keys[it]
+                Pair(
+                    encodeData(data, pair.first).encodeBase64(),
+                    encodeData(data, pair.second).encodeBase64()
+                )
+            }
+            log?.println(
+                "$prefix encryptedEmptyMessage=${
+                    list.joinToString(prefix = "[", postfix = "]") {
+                        "(${it.first},${it.second})"
+                    }
+                }"
+            )
+            return list
+        }
+
+        /**
+         * 6) Получение 2n зашифрованных квитанций
+         */
+        fun setEncryptedTickets(pairs: List<Pair<String, String>>) {
+            log?.println(
+                "$prefix encryptedTickets=${
+                    pairs.joinToString(prefix = "[", postfix = "]") {
+                        "(${it.first},${it.second})"
+                    }
+                }"
+            )
+            encryptedPairs = pairs.map { it.first.decodeBase64Bytes() to it.second.decodeBase64Bytes() }
+        }
+
+        /**
+         * 7) Отправка половины ключей, возможна распределенная передача, либо все сразу
+         */
+        fun getSupportKeys(): List<Pair<String?, String?>> {
+            val list = List<Pair<String?, String?>>(countKeys) {
+                if (Random.nextBoolean()) {
+                    sendingKeys[it] = 1
+                    Pair(keys[it].first.encodeBase64(), null)
+                } else {
+                    sendingKeys[it] = 2
+                    Pair(null, keys[it].second.encodeBase64())
+                }
+            }
+            log?.println("$prefix supportKeys=${
+                list.joinToString(prefix = "[", postfix = "]") {
+                    "(${it.first},${it.second})"
+                }
+            }")
+            return list
+        }
+
+        /**
+         * 8) Получение половины ключей, возможна распределенная передача, либо все сразу
+         */
+        fun setSupportInKeys(list: List<Pair<String?, String?>>) {
+            log?.println("$prefix supportInKeys=${
+                list.joinToString(prefix = "[", postfix = "]") {
+                    "(${it.first},${it.second})"
+                }
+            }")
+            inKeys = List(countKeys) {
+                val pair = list[it]
+                pair.first?.decodeBase64Bytes() to pair.second?.decodeBase64Bytes()
+            }
+        }
+
+        /**
+         * 9) Расшифровка всех квитанций, которые можно расшифровать
+         */
+        fun decryptingTickets(): Boolean {
+            var success = false
+            var first: ByteArray? = null
+            var second: ByteArray? = null
+            inKeys?.forEachIndexed { index, keyPair ->
+                encryptedPairs?.get(index)?.let {
+                    keyPair.first?.let { key ->
+                        if (first != null)
+                            success = first.contentEquals(decodeData(it.first, key))
+                        else
+                            first = decodeData(it.first, key)
+                    }
+                    keyPair.second?.let { key ->
+                        if (second != null)
+                            success = second.contentEquals(decodeData(it.second, key))
+                        else
+                            second = decodeData(it.second, key)
+                    }
+                }
+            }
+            log?.println("$prefix success=$success, first=$first, second=$second")
+            return success
+        }
+
+        /**
+         * 11) Передача первых байтов 2n ключей (проще оперировать байтами, для 256-битного - 32)
+         */
+        fun getBytesSliceKeys(): List<String> {
+            val bytes = List<String>(KEY_LENGTH / 8) { indexByte ->
+                val array = ByteArray(2 * keys.size)
+                keys.forEachIndexed { index, pair ->
+                    array[2 * index] = pair.first[indexByte]
+                    array[2 * index + 1] = pair.second[indexByte]
+                }
+                array.encodeBase64()
+            }
+            log?.println("$prefix getBytesSliceKeys=$bytes")
+            return bytes
+        }
+
+        /**
+         * 12) Получение первых байтов 2n ключей
+         */
+        fun setBytesSliceInKeys(bytes: List<String>) {
+            log?.println("$prefix setBytesSliceInKeys bytes=$bytes")
+            val bytesDecode = bytes.map { it.decodeBase64Bytes() }
+            val newKeys = List<Pair<ByteArray, ByteArray>>(countKeys) {
+                Pair(ByteArray(KEY_LENGTH / 8), ByteArray(KEY_LENGTH / 8))
+            }
+            bytesDecode.forEachIndexed { indexByte, bytes ->
+                keys.forEachIndexed { index, pair ->
+                    pair.first[indexByte] = bytes[2 * index]
+                    pair.second[indexByte] = bytes[2 * index + 1]
+                }
+            }
+            inKeys = newKeys
+        }
+
+        /**
+         * 14) Расшифровка оставшихся квитанций
+         */
+        fun decryptingTicketsFinally(): String? {
+            var success = false
+            var first: ByteArray? = null
+            var second: ByteArray? = null
+            inKeys?.forEachIndexed { index, keyPair ->
+                encryptedPairs?.get(index)?.let {
+                    keyPair.first?.let { key ->
+                        if (first != null)
+                            success = first.contentEquals(decodeData(it.first, key))
+                        else
+                            first = decodeData(it.first, key)
+                    }
+                    keyPair.second?.let { key ->
+                        if (second != null)
+                            success = second.contentEquals(decodeData(it.second, key))
+                        else
+                            second = decodeData(it.second, key)
+                    }
+                }
+            }
+            log?.println("$prefix success=$success, first=$first, second=$second")
+            return if (success) (first!! + second!!).decodeToString()
+            else
+                null
+        }
+    }
+
+    class Inbox(
+        val encryptedMessage: String,
+        val ticket1: String,
+        val ticket2: String,
+        val uuid: String,
+        private val log: PrintStream? = null
+    ) : ConfirmEmailProtocol() {
+        private val prefix = "Inbox-$uuid:"
+        private var countKeys: Int = 0
+        private var keys: List<Pair<ByteArray, ByteArray>>? = null
+        private var key: ByteArray? = null
+        private val sendingKeys = MutableList(countKeys) { 0 }
+
+        private var encryptedPairs: List<Pair<ByteArray, ByteArray>>? = null
+        private var inKeys: List<Pair<ByteArray?, ByteArray?>>? = null
+
+        private var encryptedEmptyMessage: List<Pair<ByteArray, ByteArray>>? = null
+
+        /**
+         * 4) Получение зашифрованных пестых сообщений
+         */
+        fun setEncryptedEmptyMessage(list: List<Pair<String, String>>) {
+            countKeys = list.size
+            log?.println("$prefix setEncryptedEmptyMessage($countKeys)=$list")
+            encryptedEmptyMessage = list.map {
+                it.first.decodeBase64Bytes() to it.second.decodeBase64Bytes()
+            }
+        }
+
+        /**
+         * 5) Генерация 2n ключей
+         */
+        fun getKeys() {
+            keys = List(countKeys) {
+                generateKey().encoded to generateKey().encoded
+            }
+        }
 
     }
 
-    class Outbox : ConfirmEmailProtocol() {
+    companion object {
+        private const val CIPHER_NAME = "AES/CBC/PKCS5Padding"
+        private const val KEY_LENGTH = 256
+        fun defaultLogger(path: String = "log.txt") = PrintStream(FileOutputStream(File(path), true))
 
+        private val generator by lazy {
+            KeyGenerator.getInstance(CIPHER_NAME).apply {
+                init(KEY_LENGTH)
+            }
+        }
+
+        private fun generateKey() = generator.generateKey()
+        fun encodeData(data: ByteArray, key: ByteArray): ByteArray {
+            val sks = SecretKeySpec(key, CIPHER_NAME)
+            val c: Cipher = Cipher.getInstance(CIPHER_NAME)
+            c.init(Cipher.ENCRYPT_MODE, sks)
+            return c.doFinal(data)
+        }
+
+        fun decodeData(data: ByteArray, key: ByteArray): ByteArray {
+            val sks = SecretKeySpec(key, CIPHER_NAME)
+            val c: Cipher = Cipher.getInstance(CIPHER_NAME)
+            c.init(Cipher.DECRYPT_MODE, sks)
+            return c.doFinal(data)
+        }
     }
 }
