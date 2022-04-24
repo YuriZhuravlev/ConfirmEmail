@@ -1,36 +1,84 @@
 package confirm.email.data.network
 
+import com.google.gson.Gson
+import confirm.email.data.network.model.GetMessage
 import confirm.email.data.network.socket.MailSocket
-import confirm.email.data.network.socket.MailSocketImpl
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+import org.koin.java.KoinJavaComponent.getKoin
 
-class SocketConsumerImpl : SocketConsumer {
-    private val _status = MutableStateFlow<Status>(Status.Disconnected)
-    val status = _status.asStateFlow()
+class SocketConsumerImpl(private val gson: Gson) : SocketConsumer, SocketProceed {
+    private val _status = MutableStateFlow<SocketConsumer.Status>(SocketConsumer.Status.Disconnected(null))
+    override val status = _status.asStateFlow()
 
-    val mailSocket: MailSocket by lazy {
-        MailSocketImpl(this).apply {
+    private var username: String? = null
+    private var url: String? = null
+
+    override fun setup(username: String, url: String) {
+        this.username = username
+        this.url = url
+    }
+
+    private val mailSocket: MailSocket by lazy {
+        getKoin().get<MailSocket>().apply {
             setOnConnectionListener {
                 CoroutineScope(Dispatchers.IO).launch {
                     if (it) {
-                        _status.emit(Status.Connected)
+                        username.let { name ->
+                            if (name != null)
+                                mailSocket.send(name)
+                            else
+                                mailSocket.disconnect()
+                        }
                     } else {
-                        _status.emit(Status.Disconnected)
+                        _status.emit(SocketConsumer.Status.Disconnected("Потеряно соединение"))
                     }
                 }
             }
         }
     }
 
-    override fun proceed(text: String) {
-        //TODO("Not yet implemented")
+    override suspend fun proceed(text: String) {
+        println("proceed: $text")
+        try {
+            val message = gson.fromJson(text, GetMessage::class.java)
+            // Если первое сообщение
+            if (_status.value == SocketConsumer.Status.Connecting) {
+                if (message.from == SERVER && message.message == username)
+                    _status.emit(SocketConsumer.Status.Connected)
+                else {
+                    _status.emit(SocketConsumer.Status.Disconnected(message.error))
+                }
+            } else {
+                // TODO
+                println("proceed: $message")
+            }
+        } catch (e: Exception) {
+            println("proceed: Failed")
+            e.printStackTrace()
+        }
     }
 
-    enum class Status {
-        Connected, Connecting, Disconnected
+    override suspend fun connect(): SocketConsumer.Status {
+        _status.emit(SocketConsumer.Status.Connecting)
+        println("starting...")
+        MainScope().launch(Dispatchers.IO) {
+            mailSocket.connect(url!!)
+        }
+        println("connecting...")
+        while (_status.value == SocketConsumer.Status.Connecting) {
+            delay(TIMEOUT)
+        }
+        return _status.value
+    }
+
+    override suspend fun disconnect() {
+        mailSocket.disconnect()
+    }
+
+    companion object {
+        private const val TIMEOUT = 100L
+        private const val SERVER = "server"
     }
 }

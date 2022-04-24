@@ -2,6 +2,9 @@ package confirm.email.di
 
 import com.google.gson.Gson
 import confirm.email.data.files.FilesManager
+import confirm.email.data.network.SocketConsumer
+import confirm.email.data.network.SocketConsumerImpl
+import confirm.email.data.network.SocketProceed
 import confirm.email.data.network.socket.MailSocket
 import confirm.email.data.network.socket.MailSocketImpl
 import confirm.email.data.repository.LetterRepository
@@ -15,9 +18,12 @@ val AppModule = module {
     single { Gson() }
     single { FilesManager(get()) }
     single { LetterRepository(get()) }
-    single { UserRepository() }
+    single { UserRepository(get()) }
+    single { SocketConsumerImpl(get()) }
+    single<SocketConsumer> { get<SocketConsumerImpl>() }
+    single<SocketProceed> { get<SocketConsumerImpl>() }
     factory { LetterCreateViewModel(get(), get()) }
     factory { LettersViewModel(get(), get()) }
     factory { LoginViewModel(get()) }
-    factory<MailSocket> { MailSocketImpl() }
+    factory<MailSocket> { MailSocketImpl(get()) }
 }
