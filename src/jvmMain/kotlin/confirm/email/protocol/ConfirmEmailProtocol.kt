@@ -2,8 +2,6 @@ package confirm.email.protocol
 
 import confirm.email.utils.xor
 import io.ktor.util.*
-import java.io.File
-import java.io.FileOutputStream
 import java.io.PrintStream
 import java.util.*
 import javax.crypto.Cipher
@@ -42,8 +40,15 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
         /**
          * 1) C = Ek(M)
          */
-        fun encryptedMessage(): String {
-            log?.println("$prefix key=${key.encodeBase64()}, encryptedMessage=$encryptedMessage")
+        fun encryptMessage() {
+            log?.println("$prefix encryptMessage key=${key.encodeBase64()}, encryptedMessage=$encryptedMessage")
+        }
+
+        /**
+         *
+         */
+        fun getEncryptMessage(): String {
+            log?.println("$prefix getEncryptedMessage encryptedMessage=$encryptedMessage")
             return encryptedMessage
         }
 
@@ -177,9 +182,9 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
         /**
          * 11-12) Получение первых байтов 2n ключей
          */
-        fun setBytesSliceInKeys(bytes: List<String>) {
-            log?.println("$prefix setBytesSliceInKeys bytes=$bytes")
-            val bytesDecode = bytes.map { it.decodeBase64Bytes() }
+        fun setBytesSliceInKeys(bytesList: List<String>) {
+            log?.println("$prefix setBytesSliceInKeys bytes=$bytesList")
+            val bytesDecode = bytesList.map { it.decodeBase64Bytes() }
             val newKeys = List<Pair<ByteArray, ByteArray>>(countKeys) {
                 Pair(ByteArray(KEY_LENGTH / 8), ByteArray(KEY_LENGTH / 8))
             }
@@ -232,7 +237,6 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
         private val prefix = "Inbox-$uuid:"
         private var countKeys: Int = 0
         private var keys: List<Pair<ByteArray, ByteArray>>? = null
-        private var key: ByteArray? = null
         private val sendingKeys = MutableList(countKeys) { 0 }
 
         private var encryptedPairs: List<Pair<ByteArray, ByteArray>>? = null
@@ -241,7 +245,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
         private var encryptedEmptyMessage: List<Pair<ByteArray, ByteArray>>? = null
 
         /**
-         * 4) Получение зашифрованных пестых сообщений
+         * 4) Получение зашифрованных пустых сообщений
          */
         fun setEncryptedEmptyMessage(list: List<Pair<String, String>>) {
             countKeys = list.size
@@ -368,9 +372,9 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
         /**
          * 11-12) Получение первых байтов 2n ключей
          */
-        fun setBytesSliceInKeys(bytes: List<String>) {
-            log?.println("$prefix setBytesSliceInKeys bytes=$bytes")
-            val bytesDecode = bytes.map { it.decodeBase64Bytes() }
+        fun setBytesSliceInKeys(bytesList: List<String>) {
+            log?.println("$prefix setBytesSliceInKeys bytes=$bytesList")
+            val bytesDecode = bytesList.map { it.decodeBase64Bytes() }
             val newKeys = List<Pair<ByteArray, ByteArray>>(countKeys) {
                 Pair(ByteArray(KEY_LENGTH / 8), ByteArray(KEY_LENGTH / 8))
             }
@@ -422,7 +426,6 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
     companion object {
         private const val CIPHER_NAME = "AES/CBC/PKCS5Padding"
         private const val KEY_LENGTH = 256
-        fun defaultLogger(path: String = "log.txt") = PrintStream(FileOutputStream(File(path), true))
 
         private val generator by lazy {
             KeyGenerator.getInstance(CIPHER_NAME).apply {
@@ -431,14 +434,14 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
         }
 
         private fun generateKey() = generator.generateKey()
-        fun encodeData(data: ByteArray, key: ByteArray): ByteArray {
+        private fun encodeData(data: ByteArray, key: ByteArray): ByteArray {
             val sks = SecretKeySpec(key, CIPHER_NAME)
             val c: Cipher = Cipher.getInstance(CIPHER_NAME)
             c.init(Cipher.ENCRYPT_MODE, sks)
             return c.doFinal(data)
         }
 
-        fun decodeData(data: ByteArray, key: ByteArray): ByteArray {
+        private fun decodeData(data: ByteArray, key: ByteArray): ByteArray {
             val sks = SecretKeySpec(key, CIPHER_NAME)
             val c: Cipher = Cipher.getInstance(CIPHER_NAME)
             c.init(Cipher.DECRYPT_MODE, sks)
