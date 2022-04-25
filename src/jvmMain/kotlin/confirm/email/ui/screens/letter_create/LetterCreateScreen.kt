@@ -117,6 +117,7 @@ fun LetterCreateScreen(viewModel: LetterCreateViewModel, onBack: () -> Unit) {
                 onClick = {
                     viewModel.send(
                         UILetter(
+                            UUID.randomUUID().toString(),
                             fromName,
                             fromEmail,
                             toName,

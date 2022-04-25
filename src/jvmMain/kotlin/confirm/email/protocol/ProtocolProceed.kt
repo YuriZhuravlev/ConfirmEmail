@@ -20,6 +20,7 @@ sealed class ProtocolProceed(
     }
 
     class OutputProtocolProceed(
+        uuid: String,
         message: String,
         emptyMessage: String,
         countKey: Int = 8,
@@ -28,7 +29,7 @@ sealed class ProtocolProceed(
         onError: ((Throwable) -> Unit),
         onResult: ((String) -> Unit)
     ) : ProtocolProceed(
-        UUID.randomUUID().toString(), onSend, onError, onResult
+        uuid, onSend, onError, onResult
     ) {
         private lateinit var instanceProtocol: ConfirmEmailProtocol.Outbox
 
@@ -123,21 +124,22 @@ sealed class ProtocolProceed(
     }
 
     class InputProtocolProceed(
-        message: ProtocolMessage,
+        uuid: String,
+        encryptedMessage: String,
         printStream: PrintStream? = null,
         ticket: String,
         onSend: ((ProtocolMessage) -> Unit),
         onError: ((Throwable) -> Unit),
         onResult: ((String) -> Unit)
     ) :
-        ProtocolProceed(message.uuid, onSend, onError, onResult) {
+        ProtocolProceed(uuid, onSend, onError, onResult) {
 
         private lateinit var instanceProtocol: ConfirmEmailProtocol.Inbox
 
         init {
             try {
                 instanceProtocol = ConfirmEmailProtocol.Inbox(
-                    message.encryptedMessage!!,
+                    encryptedMessage,
                     ticket,
                     Date().formatString(),
                     uuid,
