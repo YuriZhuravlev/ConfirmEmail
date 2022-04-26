@@ -26,7 +26,7 @@ fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> U
         var logging by remember { mutableStateOf(false) }
         var countKeys by remember { mutableStateOf(8) }
         var name by remember { mutableStateOf("@example.co") }
-        var host by remember { mutableStateOf("ws://0.0.0.0:8080") }
+        var host by remember { mutableStateOf("wss://confirm-email-socket.herokuapp.com/") }
         if (user.data != null) {
             onSuccess()
         }
