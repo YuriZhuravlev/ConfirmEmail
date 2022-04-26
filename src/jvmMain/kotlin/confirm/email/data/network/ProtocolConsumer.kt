@@ -1,11 +1,14 @@
 package confirm.email.data.network
 
+import confirm.email.data.model.UILetter
 import java.io.PrintStream
 
 interface ProtocolConsumer {
     fun proceed(text: String)
 
     fun setOnSend(onSend: ((String) -> Unit))
+
+    fun setOnSuccessInbox(onSuccessInbox: ((UILetter) -> Unit))
 
     fun output(
         uuid: String,

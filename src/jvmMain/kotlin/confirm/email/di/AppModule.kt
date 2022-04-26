@@ -15,7 +15,7 @@ import org.koin.dsl.module
 val AppModule = module {
     single { Gson() }
     single { FilesManager(get()) }
-    single { LetterRepository(get(), get(), get()) }
+    single { LetterRepository(get(), get(), get(), get()) }
     single { UserRepository(get()) }
     single { SocketConsumerImpl(get(), get()) }
     single<SocketConsumer> { get<SocketConsumerImpl>() }

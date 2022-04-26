@@ -101,6 +101,16 @@ sealed class ProtocolProceed(
                             if (sliceBytes!!.size == inSliceBytes.size) {
                                 // передача окончена
                                 instanceProtocol.setBytesSliceInKeys(inSliceBytes)
+                                onSend(
+                                    ProtocolMessage(
+                                        12,
+                                        uuid,
+                                        bytesSlice = sliceBytes!![byteIndex],
+                                        byteIndex = byteIndex,
+                                        to = to,
+                                        from = from
+                                    )
+                                )
                                 val mes = instanceProtocol.decryptingTicketsFinally()
                                 if (mes != null)
                                     onResult(mes)

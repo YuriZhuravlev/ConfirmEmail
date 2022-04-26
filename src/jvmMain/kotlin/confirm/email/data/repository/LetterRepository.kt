@@ -6,23 +6,39 @@ import confirm.email.data.files.FilesManager
 import confirm.email.data.model.LetterBox
 import confirm.email.data.model.UILetter
 import confirm.email.data.network.ProtocolConsumer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.io.PrintStream
 import java.util.*
 
 class LetterRepository(
     private val filesManager: FilesManager,
     private val protocolConsumer: ProtocolConsumer,
-    private val gson: Gson
+    private val gson: Gson,
+    private val userRepository: UserRepository
 ) {
     private val _letters = MutableStateFlow<Resource<LetterBox>>(Resource.LoadingResource())
     val letters = _letters.asStateFlow()
 
-    suspend fun loadLetters(name: String?) {
+    init {
+        protocolConsumer.setOnSuccessInbox {
+            MainScope().launch(Dispatchers.IO) {
+                userRepository.user.value.data?.name?.let { name ->
+                    filesManager.saveLetter(name, it, false)
+                    loadLetters()
+                }
+            }
+        }
+    }
+
+    suspend fun loadLetters() {
         _letters.emit(
             try {
+                val name = userRepository.user.value.data?.name
                 if (name == null) {
                     Resource.FailedResource(Throwable("Имя пользователя пусто!"))
                 } else {

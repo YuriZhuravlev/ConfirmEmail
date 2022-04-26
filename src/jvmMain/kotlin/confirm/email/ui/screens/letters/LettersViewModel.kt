@@ -20,7 +20,7 @@ class LettersViewModel(
 
     fun loadLetters() {
         viewModelScope.launch {
-            letterRepository.loadLetters(user.value.data?.name)
+            letterRepository.loadLetters()
         }
     }
 

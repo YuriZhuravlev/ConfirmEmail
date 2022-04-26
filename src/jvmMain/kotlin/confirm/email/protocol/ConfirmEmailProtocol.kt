@@ -191,7 +191,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                 Pair(ByteArray(KEY_LENGTH / 8), ByteArray(KEY_LENGTH / 8))
             }
             bytesDecode.forEachIndexed { indexByte, bytes ->
-                keys.forEachIndexed { index, pair ->
+                newKeys.forEachIndexed { index, pair ->
                     pair.first[indexByte] = bytes[2 * index]
                     pair.second[indexByte] = bytes[2 * index + 1]
                 }
@@ -386,7 +386,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                 Pair(ByteArray(KEY_LENGTH / 8), ByteArray(KEY_LENGTH / 8))
             }
             bytesDecode.forEachIndexed { indexByte, bytes ->
-                keys!!.forEachIndexed { index, pair ->
+                newKeys.forEachIndexed { index, pair ->
                     pair.first[indexByte] = bytes[2 * index]
                     pair.second[indexByte] = bytes[2 * index + 1]
                 }
