@@ -10,7 +10,9 @@ sealed class ProtocolProceed(
     val uuid: String,
     protected val onSend: ((ProtocolMessage) -> Unit),
     protected val onError: ((Throwable) -> Unit),
-    protected val onResult: ((String) -> Unit)
+    protected val onResult: ((String) -> Unit),
+    protected val to: String,
+    protected val from: String
 ) {
     abstract fun proceed(message: ProtocolMessage)
 
@@ -27,9 +29,11 @@ sealed class ProtocolProceed(
         printStream: PrintStream? = null,
         onSend: ((ProtocolMessage) -> Unit),
         onError: ((Throwable) -> Unit),
-        onResult: ((String) -> Unit)
+        onResult: ((String) -> Unit),
+        to: String,
+        from: String
     ) : ProtocolProceed(
-        uuid, onSend, onError, onResult
+        uuid, onSend, onError, onResult, to, from
     ) {
         private lateinit var instanceProtocol: ConfirmEmailProtocol.Outbox
 
@@ -46,7 +50,9 @@ sealed class ProtocolProceed(
                     ProtocolMessage(
                         2,
                         uuid,
-                        encryptedMessage = instanceProtocol.getEncryptMessage()
+                        encryptedMessage = instanceProtocol.getEncryptMessage(),
+                        to = to,
+                        from = from
                     )
                 )
                 instanceProtocol.genKeys()
@@ -54,7 +60,9 @@ sealed class ProtocolProceed(
                     ProtocolMessage(
                         4,
                         uuid,
-                        encryptedPairs = instanceProtocol.encryptedEmptyMessage()
+                        encryptedPairs = instanceProtocol.encryptedEmptyMessage(),
+                        to = to,
+                        from = from
                     )
                 )
             } catch (e: Exception) {
@@ -63,6 +71,7 @@ sealed class ProtocolProceed(
             }
         }
 
+        @Synchronized
         override fun proceed(message: ProtocolMessage) {
             try {
                 when (message.step) {
@@ -72,7 +81,9 @@ sealed class ProtocolProceed(
                             ProtocolMessage(
                                 7,
                                 uuid,
-                                halfKeys = instanceProtocol.getSupportKeys()
+                                halfKeys = instanceProtocol.getSupportKeys(),
+                                to = to,
+                                from = from
                             )
                         )
                     }
@@ -101,7 +112,9 @@ sealed class ProtocolProceed(
                                         12,
                                         uuid,
                                         bytesSlice = sliceBytes!![byteIndex],
-                                        byteIndex = byteIndex
+                                        byteIndex = byteIndex,
+                                        to = to,
+                                        from = from
                                     )
                                 )
                                 byteIndex++
@@ -130,9 +143,11 @@ sealed class ProtocolProceed(
         ticket: String,
         onSend: ((ProtocolMessage) -> Unit),
         onError: ((Throwable) -> Unit),
-        onResult: ((String) -> Unit)
+        onResult: ((String) -> Unit),
+        to: String,
+        from: String
     ) :
-        ProtocolProceed(uuid, onSend, onError, onResult) {
+        ProtocolProceed(uuid, onSend, onError, onResult, to, from) {
 
         private lateinit var instanceProtocol: ConfirmEmailProtocol.Inbox
 
@@ -151,6 +166,7 @@ sealed class ProtocolProceed(
             }
         }
 
+        @Synchronized
         override fun proceed(message: ProtocolMessage) {
             try {
                 when (message.step) {
@@ -161,7 +177,9 @@ sealed class ProtocolProceed(
                             ProtocolMessage(
                                 6,
                                 uuid,
-                                encryptedPairs = instanceProtocol.getEncryptedTickets()
+                                encryptedPairs = instanceProtocol.getEncryptedTickets(),
+                                to = to,
+                                from = from
                             )
                         )
                     }
@@ -171,7 +189,9 @@ sealed class ProtocolProceed(
                             ProtocolMessage(
                                 8,
                                 uuid,
-                                halfKeys = instanceProtocol.getSupportKeys()
+                                halfKeys = instanceProtocol.getSupportKeys(),
+                                to = to,
+                                from = from
                             )
                         )
                         if (instanceProtocol.decryptingTickets()) {
@@ -181,7 +201,9 @@ sealed class ProtocolProceed(
                                     11,
                                     uuid,
                                     bytesSlice = sliceBytes!![byteIndex],
-                                    byteIndex = byteIndex
+                                    byteIndex = byteIndex,
+                                    to = to,
+                                    from = from
                                 )
                             )
                         } else {
@@ -206,7 +228,9 @@ sealed class ProtocolProceed(
                                         11,
                                         uuid,
                                         bytesSlice = sliceBytes!![byteIndex],
-                                        byteIndex = byteIndex
+                                        byteIndex = byteIndex,
+                                        to = to,
+                                        from = from
                                     )
                                 )
                             }

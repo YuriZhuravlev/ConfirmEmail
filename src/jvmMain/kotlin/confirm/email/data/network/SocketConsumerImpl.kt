@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.koin.java.KoinJavaComponent.getKoin
 
-class SocketConsumerImpl(private val gson: Gson) : SocketConsumer, SocketProceed {
+class SocketConsumerImpl(
+    private val gson: Gson,
+    private val protocolConsumer: ProtocolConsumer
+) : SocketConsumer, SocketProceed {
     private val _status = MutableStateFlow<SocketConsumer.Status>(SocketConsumer.Status.Disconnected(null))
     override val status = _status.asStateFlow()
 
@@ -51,8 +54,11 @@ class SocketConsumerImpl(private val gson: Gson) : SocketConsumer, SocketProceed
                     _status.emit(SocketConsumer.Status.Disconnected(message.error))
                 }
             } else {
-                // TODO
-                println("proceed: $message")
+                if (message.message != null) {
+                    protocolConsumer.proceed(message.message)
+                } else {
+                    println("proceed with message null: $message")
+                }
             }
         } catch (e: Exception) {
             println("proceed: Failed")

@@ -15,14 +15,14 @@ import org.koin.dsl.module
 val AppModule = module {
     single { Gson() }
     single { FilesManager(get()) }
-    single { LetterRepository(get()) }
+    single { LetterRepository(get(), get(), get()) }
     single { UserRepository(get()) }
-    single { SocketConsumerImpl(get()) }
+    single { SocketConsumerImpl(get(), get()) }
     single<SocketConsumer> { get<SocketConsumerImpl>() }
     single<SocketProceed> { get<SocketConsumerImpl>() }
     single<ProtocolConsumer> { ProtocolConsumerImpl(get()) }
     factory { LetterCreateViewModel(get(), get()) }
     factory { LettersViewModel(get(), get()) }
     factory { LoginViewModel(get()) }
-    factory<MailSocket> { MailSocketImpl(get()) }
+    factory<MailSocket> { MailSocketImpl(get(), get()) }
 }

@@ -41,14 +41,14 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 1) C = Ek(M)
          */
         fun encryptMessage() {
-            log?.println("$prefix encryptMessage key=${key.encodeBase64()}, encryptedMessage=$encryptedMessage")
+            log?.println("$prefix 1) key=${key.encodeBase64()}, encryptedMessage=$encryptedMessage")
         }
 
         /**
-         *
+         * 2)
          */
         fun getEncryptMessage(): String {
-            log?.println("$prefix getEncryptedMessage encryptedMessage=$encryptedMessage")
+            log?.println("$prefix 2) encryptedMessage=$encryptedMessage")
             return encryptedMessage
         }
 
@@ -57,7 +57,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          */
         fun genKeys() {
             log?.println(
-                "$prefix emptyMessage=$emptyMessage, generate keys($countKeys)=${
+                "$prefix 3) emptyMessage=$emptyMessage, generate keys($countKeys)=${
                     keys.joinToString(prefix = "[", postfix = "]") {
                         "(${it.first.encodeBase64()},${it.second.encodeBase64()})"
                     }
@@ -77,7 +77,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                 )
             }
             log?.println(
-                "$prefix encryptedEmptyMessage=${
+                "$prefix 4) encryptedEmptyMessage=${
                     list.joinToString(prefix = "[", postfix = "]") {
                         "(${it.first},${it.second})"
                     }
@@ -91,7 +91,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          */
         fun setEncryptedTickets(pairs: List<Pair<String, String>>) {
             log?.println(
-                "$prefix encryptedTickets=${
+                "$prefix 6) encryptedTickets=${
                     pairs.joinToString(prefix = "[", postfix = "]") {
                         "(${it.first},${it.second})"
                     }
@@ -113,7 +113,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                     Pair(null, keys[it].second.encodeBase64())
                 }
             }
-            log?.println("$prefix supportKeys=${
+            log?.println("$prefix 7) supportKeys=${
                 list.joinToString(prefix = "[", postfix = "]") {
                     "(${it.first},${it.second})"
                 }
@@ -125,7 +125,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 8) Получение половины ключей, возможна распределенная передача, либо все сразу
          */
         fun setSupportInKeys(list: List<Pair<String?, String?>>) {
-            log?.println("$prefix supportInKeys=${
+            log?.println("$prefix 8) supportInKeys=${
                 list.joinToString(prefix = "[", postfix = "]") {
                     "(${it.first},${it.second})"
                 }
@@ -140,26 +140,28 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 9) Расшифровка всех квитанций, которые можно расшифровать
          */
         fun decryptingTickets(): Boolean {
-            var success = false
+            var success = true
             var first: ByteArray? = null
             var second: ByteArray? = null
             inKeys?.forEachIndexed { index, keyPair ->
                 encryptedPairs?.get(index)?.let {
                     keyPair.first?.let { key ->
                         if (first != null)
-                            success = first.contentEquals(decodeData(it.first, key))
+                            success = success && first.contentEquals(decodeData(it.first, key))
                         else
                             first = decodeData(it.first, key)
                     }
                     keyPair.second?.let { key ->
                         if (second != null)
-                            success = second.contentEquals(decodeData(it.second, key))
+                            success = success && second.contentEquals(decodeData(it.second, key))
                         else
                             second = decodeData(it.second, key)
                     }
                 }
             }
-            log?.println("$prefix success=$success, first=$first, second=$second")
+            log?.println("$prefix 9) success=$success, first=${first?.let { String(it) }}, second=${
+                second?.let { String(it) }
+            }")
             return success
         }
 
@@ -175,7 +177,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                 }
                 array.encodeBase64()
             }
-            log?.println("$prefix getBytesSliceKeys=$bytes")
+            log?.println("$prefix 12) getBytesSliceKeys=$bytes")
             return bytes
         }
 
@@ -183,7 +185,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 11-12) Получение первых байтов 2n ключей
          */
         fun setBytesSliceInKeys(bytesList: List<String>) {
-            log?.println("$prefix setBytesSliceInKeys bytes=$bytesList")
+            log?.println("$prefix 11) setBytesSliceInKeys bytes=$bytesList")
             val bytesDecode = bytesList.map { it.decodeBase64Bytes() }
             val newKeys = List<Pair<ByteArray, ByteArray>>(countKeys) {
                 Pair(ByteArray(KEY_LENGTH / 8), ByteArray(KEY_LENGTH / 8))
@@ -201,27 +203,29 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 13) Расшифровка оставшихся квитанций
          */
         fun decryptingTicketsFinally(): String? {
-            var success = false
+            var success = true
             var first: ByteArray? = null
             var second: ByteArray? = null
             inKeys?.forEachIndexed { index, keyPair ->
                 encryptedPairs?.get(index)?.let {
                     keyPair.first?.let { key ->
                         if (first != null)
-                            success = first.contentEquals(decodeData(it.first, key))
+                            success = success && first.contentEquals(decodeData(it.first, key))
                         else
                             first = decodeData(it.first, key)
                     }
                     keyPair.second?.let { key ->
                         if (second != null)
-                            success = second.contentEquals(decodeData(it.second, key))
+                            success = success && second.contentEquals(decodeData(it.second, key))
                         else
                             second = decodeData(it.second, key)
                     }
                 }
             }
-            log?.println("$prefix success=$success, first=$first, second=$second")
-            return if (success) (first!! + second!!).decodeToString()
+            log?.println("$prefix 13) success=$success, first=${first?.let { String(it) }}, second=${
+                second?.let { String(it) }
+            }")
+            return if (success) first?.let { String(it) } + second?.let { String(it) }
             else
                 null
         }
@@ -237,9 +241,10 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
         private val prefix = "Inbox-$uuid:"
         private var countKeys: Int = 0
         private var keys: List<Pair<ByteArray, ByteArray>>? = null
-        private val sendingKeys = MutableList(countKeys) { 0 }
+        private val sendingKeys by lazy {
+            MutableList(countKeys) { 0 }
+        }
 
-        private var encryptedPairs: List<Pair<ByteArray, ByteArray>>? = null
         private var inKeys: List<Pair<ByteArray?, ByteArray?>>? = null
 
         private var encryptedEmptyMessage: List<Pair<ByteArray, ByteArray>>? = null
@@ -249,7 +254,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          */
         fun setEncryptedEmptyMessage(list: List<Pair<String, String>>) {
             countKeys = list.size
-            log?.println("$prefix setEncryptedEmptyMessage($countKeys)=$list")
+            log?.println("$prefix 4) setEncryptedEmptyMessage($countKeys)=$list")
             encryptedEmptyMessage = list.map {
                 it.first.decodeBase64Bytes() to it.second.decodeBase64Bytes()
             }
@@ -263,7 +268,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                 generateKey().encoded to generateKey().encoded
             }
             log?.println(
-                "$prefix genkeys=${
+                "$prefix 5) genkeys=${
                     keys!!.joinToString(prefix = "[", postfix = "]") {
                         "(${it.first}, ${it.second})"
                     }
@@ -281,7 +286,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                 encodeData(first, pair.first).encodeBase64() to encodeData(second, pair.second).encodeBase64()
             }
             log?.println(
-                "$prefix getEncryptedTickets($ticket1, $ticket2)=${
+                "$prefix 6) getEncryptedTickets($ticket1, $ticket2)=${
                     list.joinToString(prefix = "[", postfix = "]") {
                         "(${it.first}, ${it.second})"
                     }
@@ -294,7 +299,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 7) Получение половины ключей, возможна распределенная передача, либо все сразу
          */
         fun setSupportInKeys(list: List<Pair<String?, String?>>) {
-            log?.println("$prefix supportInKeys=${
+            log?.println("$prefix 7) supportInKeys=${
                 list.joinToString(prefix = "[", postfix = "]") {
                     "(${it.first},${it.second})"
                 }
@@ -318,7 +323,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                     Pair(null, keys!![it].second.encodeBase64())
                 }
             }
-            log?.println("$prefix supportKeys=${
+            log?.println("$prefix 8) supportKeys=${
                 list.joinToString(prefix = "[", postfix = "]") {
                     "(${it.first},${it.second})"
                 }
@@ -330,26 +335,28 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 10) Расшифровка всех пустых сообщений, которые можно расшифровать
          */
         fun decryptingTickets(): Boolean {
-            var success = false
+            var success = true
             var first: ByteArray? = null
             var second: ByteArray? = null
             inKeys?.forEachIndexed { index, keyPair ->
-                encryptedPairs?.get(index)?.let {
+                encryptedEmptyMessage?.get(index)?.let {
                     keyPair.first?.let { key ->
-                        if (first != null)
-                            success = first.contentEquals(decodeData(it.first, key))
-                        else
+                        if (first != null) {
+                            success = success && first.contentEquals(decodeData(it.first, key))
+                        } else
                             first = decodeData(it.first, key)
                     }
                     keyPair.second?.let { key ->
                         if (second != null)
-                            success = second.contentEquals(decodeData(it.second, key))
+                            success = success && second.contentEquals(decodeData(it.second, key))
                         else
                             second = decodeData(it.second, key)
                     }
                 }
             }
-            log?.println("$prefix success=$success, first=$first, second=$second")
+            log?.println("$prefix 10) success=$success, first=${first?.let { String(it) }}, second=${
+                second?.let { String(it) }
+            }")
             return success
         }
 
@@ -365,7 +372,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
                 }
                 array.encodeBase64()
             }
-            log?.println("$prefix getBytesSliceKeys=$bytes")
+            log?.println("$prefix 11) getBytesSliceKeys=$bytes")
             return bytes
         }
 
@@ -373,7 +380,7 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 11-12) Получение первых байтов 2n ключей
          */
         fun setBytesSliceInKeys(bytesList: List<String>) {
-            log?.println("$prefix setBytesSliceInKeys bytes=$bytesList")
+            log?.println("$prefix 12) setBytesSliceInKeys bytes=$bytesList")
             val bytesDecode = bytesList.map { it.decodeBase64Bytes() }
             val newKeys = List<Pair<ByteArray, ByteArray>>(countKeys) {
                 Pair(ByteArray(KEY_LENGTH / 8), ByteArray(KEY_LENGTH / 8))
@@ -392,26 +399,28 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
          * 14) Расшифровка оставшихся пустых сообщений
          */
         fun decryptionMessage(): String? {
-            var success = false
+            var success = true
             var first: ByteArray? = null
             var second: ByteArray? = null
             inKeys?.forEachIndexed { index, keyPair ->
-                encryptedPairs?.get(index)?.let {
+                encryptedEmptyMessage?.get(index)?.let {
                     keyPair.first?.let { key ->
                         if (first != null)
-                            success = first.contentEquals(decodeData(it.first, key))
+                            success = success && first.contentEquals(decodeData(it.first, key))
                         else
                             first = decodeData(it.first, key)
                     }
                     keyPair.second?.let { key ->
                         if (second != null)
-                            success = second.contentEquals(decodeData(it.second, key))
+                            success = success && second.contentEquals(decodeData(it.second, key))
                         else
                             second = decodeData(it.second, key)
                     }
                 }
             }
-            log?.println("$prefix success=$success, first=$first, second=$second")
+            log?.println("$prefix 14) success=$success, first=${first?.let { String(it) }}, second=${
+                second?.let { String(it) }
+            }")
             return if (success) {
                 val resultKey = inKeys!!.first().let { it.first!!.xor(it.second!!) }
                 val message = decodeData(encryptedMessage.decodeBase64Bytes(), resultKey)
@@ -424,11 +433,11 @@ sealed class ConfirmEmailProtocol(val uuid: String) {
     }
 
     companion object {
-        private const val CIPHER_NAME = "AES/CBC/PKCS5Padding"
-        private const val KEY_LENGTH = 256
+        private const val CIPHER_NAME = "AES"
+        private const val KEY_LENGTH = 128
 
         private val generator by lazy {
-            KeyGenerator.getInstance(CIPHER_NAME).apply {
+            KeyGenerator.getInstance("AES").apply {
                 init(KEY_LENGTH)
             }
         }

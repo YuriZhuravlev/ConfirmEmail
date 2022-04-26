@@ -5,6 +5,7 @@ import confirm.email.data.Resource
 import confirm.email.data.model.UILetter
 import confirm.email.data.repository.LetterRepository
 import confirm.email.data.repository.UserRepository
+import confirm.email.protocol.ProtocolProceed
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -21,7 +22,12 @@ class LetterCreateViewModel(
     fun send(letter: UILetter) {
         viewModelScope.launch {
             _result.emit(Resource.LoadingResource())
-            _result.emit(letterRepository.send(letter))
+            _result.emit(
+                letterRepository.send(
+                    letter,
+                    printStream = ProtocolProceed.defaultLogger()
+                )
+            )
         }
     }
 }

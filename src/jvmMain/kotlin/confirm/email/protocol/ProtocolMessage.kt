@@ -7,5 +7,7 @@ data class ProtocolMessage(
     val encryptedPairs: List<Pair<String, String>>? = null,
     val halfKeys: List<Pair<String?, String?>>? = null,
     val bytesSlice: String? = null,
-    val byteIndex: Int? = null
+    val byteIndex: Int? = null,
+    val to: String,
+    val from: String
 )

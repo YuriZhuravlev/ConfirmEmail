@@ -1,15 +1,29 @@
 package confirm.email.data.network.socket
 
+import confirm.email.data.network.ProtocolConsumer
 import confirm.email.data.network.SocketProceed
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
-class MailSocketImpl(private val socketProceed: SocketProceed) : MailSocket {
+class MailSocketImpl(
+    private val socketProceed: SocketProceed,
+    private val protocolConsumer: ProtocolConsumer
+) : MailSocket {
     private val client = HttpClient(CIO) {
         install(WebSockets)
+    }
+
+    init {
+        protocolConsumer.setOnSend {
+            MainScope().launch {
+                send(it)
+            }
+        }
     }
 
     private var socketSession: ClientWebSocketSession? = null

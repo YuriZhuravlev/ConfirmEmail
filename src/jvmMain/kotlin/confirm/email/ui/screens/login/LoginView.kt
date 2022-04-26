@@ -22,8 +22,8 @@ import confirm.email.ui.view.BigText
 fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> Unit) {
     Column(Modifier.fillMaxSize().background(Color.White).padding(vertical = 24.dp)) {
         val user by viewModel.user.collectAsState()
-        var name by remember { mutableStateOf("") }
-        var host by remember { mutableStateOf("") }
+        var name by remember { mutableStateOf("@mail.co") }
+        var host by remember { mutableStateOf("ws://0.0.0.0:8080") }
         if (user.data != null) {
             onSuccess()
         }

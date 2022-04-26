@@ -14,7 +14,9 @@ interface ProtocolConsumer {
         countKey: Int = 8,
         printStream: PrintStream? = null,
         onError: ((Throwable) -> Unit),
-        onResult: ((String) -> Unit)
+        onResult: ((String) -> Unit),
+        to: String,
+        from: String
     )
 
     fun input(
@@ -23,6 +25,8 @@ interface ProtocolConsumer {
         printStream: PrintStream? = null,
         ticket: String,
         onError: ((Throwable) -> Unit),
-        onResult: ((String) -> Unit)
+        onResult: ((String) -> Unit),
+        to: String,
+        from: String
     )
 }
