@@ -24,7 +24,7 @@ fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> U
     Column(Modifier.fillMaxSize().background(Color.White).padding(vertical = 24.dp)) {
         val user by viewModel.user.collectAsState()
         var logging by remember { mutableStateOf(false) }
-        var countKeys by remember { mutableStateOf(8) }
+        var countKeys by remember { mutableStateOf("8") }
         var name by remember { mutableStateOf("@example.co") }
         var host by remember { mutableStateOf("wss://confirm-email-socket.herokuapp.com/") }
         if (user.data != null) {
@@ -50,17 +50,22 @@ fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> U
         )
         Button(
             modifier = Modifier.align(Alignment.CenterHorizontally), onClick = {
-                viewModel.login(name, host, logging, countKeys)
+                viewModel.login(name, host, logging, countKeys.toInt())
             }, enabled = name.isNotBlank()
                     && host.isNotBlank()
                     && user.status != Resource.Status.Loading
+                    && countKeys.toIntOrNull().let { it != null && it in 2..32 }
         ) {
             Text("Войти")
         }
         if (user.status == Resource.Status.Loading)
             CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
         if (user.status == Resource.Status.Failed)
-            Text(user.error?.message ?: "Произошла ошибка", color = Color.Red)
+            Text(
+                user.error?.message ?: "Произошла ошибка",
+                color = Color.Red,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
         Box(Modifier.weight(1f))
         Column(
             Modifier.padding(start = 8.dp).width(300.dp).border(1.dp, Color.DarkGray, RoundedCornerShape(8.dp))
@@ -76,14 +81,13 @@ fun LoginView(viewModel: LoginViewModel, toAbout: () -> Unit, onSuccess: () -> U
             Divider(Modifier.padding(vertical = 6.dp))
             Row {
                 SmallText(
-                    "Количество пар ключей для исходящих сообщений",
+                    "Количество пар ключей для исходящих сообщений [2..32]",
                     Modifier.align(Alignment.CenterVertically).weight(1f)
                 )
                 BasicTextField(
-                    countKeys.toString(),
-                    {
-                        it.toIntOrNull()?.let { countKeys = it }
-                    }, Modifier.align(Alignment.CenterVertically).padding(start = 4.dp),
+                    countKeys,
+                    { countKeys = it },
+                    Modifier.align(Alignment.CenterVertically).padding(start = 4.dp),
                     textStyle = TextStyle(fontSize = 12.sp, textAlign = TextAlign.End),
                     singleLine = true
                 )
