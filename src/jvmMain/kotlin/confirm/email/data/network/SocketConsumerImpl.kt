@@ -18,6 +18,8 @@ class SocketConsumerImpl(
     private var username: String? = null
     private var url: String? = null
 
+    private var onSendError: ((String?) -> Unit)? = null
+
     override fun setup(username: String, url: String) {
         this.username = username
         this.url = url
@@ -58,6 +60,12 @@ class SocketConsumerImpl(
                     protocolConsumer.proceed(message.message)
                 } else {
                     println("proceed with message null: $message")
+                    if (_status.value == SocketConsumer.Status.Connecting) {
+                        _status.emit(SocketConsumer.Status.Disconnected(message.error))
+                    } else {
+                        // Уведомить LetterRepository
+                        onSendError?.invoke(message.error)
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -81,6 +89,10 @@ class SocketConsumerImpl(
 
     override suspend fun disconnect() {
         mailSocket.disconnect()
+    }
+
+    override fun setOnSendError(onSendError: ((String?) -> Unit)?) {
+        this.onSendError = onSendError
     }
 
     companion object {

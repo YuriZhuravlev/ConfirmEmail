@@ -3,6 +3,7 @@ package confirm.email.data.network
 import com.google.gson.Gson
 import confirm.email.data.model.UILetter
 import confirm.email.data.network.model.SendMessage
+import confirm.email.logger
 import confirm.email.protocol.ProtocolMessage
 import confirm.email.protocol.ProtocolProceed
 import java.io.PrintStream
@@ -38,7 +39,7 @@ class ProtocolConsumerImpl(private val gson: Gson) : ProtocolConsumer {
                     onResult = ::success,
                     to = message.from,
                     from = message.to,
-                    printStream = ProtocolProceed.defaultLogger()
+                    printStream = logger()
                 )
             }
         } catch (e: Exception) {

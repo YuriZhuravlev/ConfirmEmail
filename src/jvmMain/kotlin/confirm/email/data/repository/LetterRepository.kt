@@ -6,6 +6,7 @@ import confirm.email.data.files.FilesManager
 import confirm.email.data.model.LetterBox
 import confirm.email.data.model.UILetter
 import confirm.email.data.network.ProtocolConsumer
+import confirm.email.data.network.SocketConsumer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -19,7 +20,8 @@ class LetterRepository(
     private val filesManager: FilesManager,
     private val protocolConsumer: ProtocolConsumer,
     private val gson: Gson,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val socketConsumer: SocketConsumer
 ) {
     private val _letters = MutableStateFlow<Resource<LetterBox>>(Resource.LoadingResource())
     val letters = _letters.asStateFlow()
@@ -72,9 +74,13 @@ class LetterRepository(
                 to = letter.toEmail,
                 from = letter.fromEmail
             )
+            socketConsumer.setOnSendError {
+                result = Result.failure(Throwable(it))
+            }
             while (result == null) {
                 delay(TIMEOUT)
             }
+            socketConsumer.setOnSendError(null)
             if (result!!.isSuccess) {
                 filesManager.saveLetter(letter.fromEmail, letter, true)
                 Resource.SuccessResource(letter)

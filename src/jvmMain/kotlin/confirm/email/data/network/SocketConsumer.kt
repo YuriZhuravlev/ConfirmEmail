@@ -10,6 +10,8 @@ interface SocketConsumer {
     suspend fun connect(): Status
     suspend fun disconnect()
 
+    fun setOnSendError(onSendError: ((String?) -> Unit)?)
+
     sealed class Status {
         object Connected : Status()
         object Connecting : Status()
