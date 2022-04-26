@@ -3,7 +3,6 @@ package confirm.email.data.files
 import com.google.gson.Gson
 import confirm.email.data.model.LetterBox
 import confirm.email.data.model.UILetter
-import confirm.email.utils.formatFile
 import kotlinx.coroutines.*
 import java.io.File
 
@@ -37,7 +36,7 @@ class FilesManager(private val gson: Gson) {
                             launch {
                                 try {
                                     val letter = gson.fromJson(file.readText(), UILetter::class.java)
-                                    outboxLetters.add(letter)
+                                    inboxLetters.add(letter)
                                 } catch (e: Exception) {
                                     println(e.message)
                                 }
@@ -48,6 +47,8 @@ class FilesManager(private val gson: Gson) {
                 jobs.joinAll()
             }
         }
+        inboxLetters.sortByDescending { it.date }
+        outboxLetters.sortByDescending { it.date }
         return LetterBox(inboxLetters, outboxLetters)
     }
 
@@ -56,7 +57,7 @@ class FilesManager(private val gson: Gson) {
             val folder = File(PATH + name, if (outbox) OUTBOX else INBOX)
             if (!folder.exists())
                 folder.mkdirs()
-            val file = File(folder, letter.date.formatFile() + POSTFIX)
+            val file = File(folder, letter.uuid + POSTFIX)
             file.createNewFile()
             file.writeBytes(gson.toJson(letter).toByteArray())
         }

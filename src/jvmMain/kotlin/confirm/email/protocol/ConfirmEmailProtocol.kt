@@ -3,7 +3,6 @@ package confirm.email.protocol
 import confirm.email.utils.xor
 import io.ktor.util.*
 import java.io.PrintStream
-import java.util.*
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.SecretKeySpec
@@ -11,11 +10,12 @@ import kotlin.random.Random
 
 sealed class ConfirmEmailProtocol(val uuid: String) {
     class Outbox(
+        uuid: String,
         val message: String,
         val emptyMessage: String,
         private val countKeys: Int = 8,
         private val log: PrintStream? = null
-    ) : ConfirmEmailProtocol(UUID.randomUUID().toString()) {
+    ) : ConfirmEmailProtocol(uuid) {
         private val prefix = "Outbox-$uuid:"
 
         init {

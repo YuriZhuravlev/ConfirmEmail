@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.PrintStream
-import java.util.*
 
 class LetterRepository(
     private val filesManager: FilesManager,
@@ -60,7 +59,7 @@ class LetterRepository(
         return try {
             var result: Result<String>? = null
             protocolConsumer.output(
-                UUID.randomUUID().toString(),
+                letter.uuid,
                 gson.toJson(letter),
                 letter.fromEmail + letter.data,
                 countKey,

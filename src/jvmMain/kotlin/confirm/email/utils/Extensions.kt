@@ -21,13 +21,13 @@ private val formatter by lazy {
     SimpleDateFormat("HH:mm d.MM", Locale.getDefault())
 }
 
-private val fileFormatter by lazy {
-    SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault())
+private val logFormatter by lazy {
+    SimpleDateFormat("[HH:mm:ss.SSSS dd-MM-yyyy]")
 }
 
 fun Date.formatString() = formatter.format(this)
 
-fun Date.formatFile() = fileFormatter.format(this)
+fun Date.formatLog() = logFormatter.format(this)
 
 fun ByteArray.xor(key: ByteArray): ByteArray {
     return ByteArray(size) { i ->

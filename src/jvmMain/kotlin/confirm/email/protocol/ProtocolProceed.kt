@@ -40,6 +40,7 @@ sealed class ProtocolProceed(
         init {
             try {
                 instanceProtocol = ConfirmEmailProtocol.Outbox(
+                    uuid,
                     message,
                     emptyMessage,
                     countKey,

@@ -81,7 +81,9 @@ class SocketConsumerImpl(
             mailSocket.connect(url!!)
         }
         println("connecting...")
-        while (_status.value == SocketConsumer.Status.Connecting) {
+        var time = 0
+        while (time < 50 && _status.value == SocketConsumer.Status.Connecting) {
+            time++
             delay(TIMEOUT)
         }
         return _status.value
